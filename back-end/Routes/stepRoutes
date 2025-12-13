@@ -1,0 +1,26 @@
+const express = require('express');
+const router = express.Router();
+const stepController = require('../Controller/stepController');
+
+// GET /api/steps - Get all steps (with filters: ?name=xxx&status=xxx&item_id=xxx)
+router.get('/', stepController.getAllSteps);
+
+// GET /api/steps/item/:itemName - Get all steps for an item by item name
+router.get('/item/:itemName', stepController.getItemSteps);
+
+// GET /api/steps/name/:name - Get step by name
+router.get('/name/:name', stepController.getStepByName);
+
+// POST /api/steps - Create new step
+router.post('/', stepController.createStep);
+
+// PUT /api/steps/name/:name - Update step by name
+router.put('/name/:name', stepController.updateStepByName);
+
+// PUT /api/steps/:id/status - Update step status
+router.put('/:id/status', stepController.updateStepStatus);
+
+// DELETE /api/steps/name/:name - Delete step by name
+router.delete('/name/:name', stepController.deleteStepByName);
+
+module.exports = router;
