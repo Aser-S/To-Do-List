@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
+import CategoryManager from './CategoryManager';
 
 const API_BASE = 'http://localhost:5000/api';
 
 function AdminPanel() {
+  const [activeTab, setActiveTab] = useState('agents');
   const [agents, setAgents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -129,11 +131,31 @@ function AdminPanel() {
   return (
     <div className="admin-panel">
       <div className="admin-header">
-        <h2>👤 Agent Management</h2>
-        <button className="primary-btn" onClick={() => setShowAddModal(true)}>
-          + Add Agent
-        </button>
+        <h2>Admin Panel</h2>
+        <div className="admin-tabs">
+          <button 
+            className={`tab-btn ${activeTab === 'agents' ? 'active' : ''}`}
+            onClick={() => setActiveTab('agents')}
+          >
+            👤 Agents
+          </button>
+          <button 
+            className={`tab-btn ${activeTab === 'categories' ? 'active' : ''}`}
+            onClick={() => setActiveTab('categories')}
+          >
+            🏷️ Categories
+          </button>
+        </div>
       </div>
+
+      {activeTab === 'agents' && (
+        <>
+          <div className="section-header">
+            <h3>Agent Management</h3>
+            <button className="primary-btn" onClick={() => setShowAddModal(true)}>
+              + Add Agent
+            </button>
+          </div>
 
       {error && <div className="error-banner">{error}</div>}
 
@@ -266,6 +288,12 @@ function AdminPanel() {
             </form>
           </div>
         </div>
+      )}
+        </>
+      )}
+
+      {activeTab === 'categories' && (
+        <CategoryManager />
       )}
     </div>
   );

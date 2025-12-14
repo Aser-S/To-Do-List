@@ -1,14 +1,12 @@
 import { useState, useEffect } from 'react';
 import ChecklistCard from './ChecklistCard';
-import AddChecklistModal from './AddChecklistModal';
 
 const API_BASE = 'http://localhost:5000/api';
 
-function SpaceBox({ space, onChecklistUpdate, onSpaceDeleted }) {
+function SpaceBox({ space, onSpaceDeleted, onAddChecklistClick, onChecklistUpdate }) {
   const [expanded, setExpanded] = useState(true);
   const [checklists, setChecklists] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [showAddChecklistModal, setShowAddChecklistModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
@@ -50,10 +48,8 @@ function SpaceBox({ space, onChecklistUpdate, onSpaceDeleted }) {
 
   const handleChecklistDeleted = (checklistId) => {
     setChecklists(checklists.filter(c => c._id !== checklistId));
-  };
-
-  const handleChecklistAdded = (newChecklist) => {
-    setChecklists([...checklists, newChecklist]);
+    // Notify parent component about the change
+    onChecklistUpdate && onChecklistUpdate();
   };
 
   return (
@@ -96,19 +92,13 @@ function SpaceBox({ space, onChecklistUpdate, onSpaceDeleted }) {
           )}
           <button 
             className="add-btn"
-            onClick={() => setShowAddChecklistModal(true)}
+            onClick={() => onAddChecklistClick && onAddChecklistClick(space.space_title)}
           >
             + Add Checklist
           </button>
         </div>
       )}
 
-      <AddChecklistModal
-        isOpen={showAddChecklistModal}
-        onClose={() => setShowAddChecklistModal(false)}
-        onChecklistAdded={handleChecklistAdded}
-        spaceName={space.space_title}
-      />
     </div>
   );
 }

@@ -106,6 +106,37 @@ h1, h2, h3, h4 {
     background: #4caf50;
 }
 
+.auth-switch {
+    text-align: center;
+    margin: 20px 0 10px 0;
+    color: #666;
+}
+
+.link-btn {
+    background: none;
+    border: none;
+    color: #667eea;
+    cursor: pointer;
+    text-decoration: underline;
+    font-size: inherit;
+    padding: 0;
+    margin: 0;
+}
+
+.link-btn:hover {
+    color: #764ba2;
+}
+
+.error {
+    background: #ffebee;
+    color: #c62828;
+    padding: 12px;
+    border-radius: 8px;
+    margin: 15px 0;
+    border-left: 4px solid #c62828;
+    font-size: 14px;
+}
+
 /* Dashboard */
 .dashboard {
     min-height: 100vh;
@@ -189,7 +220,7 @@ h1, h2, h3, h4 {
     background: white;
     border-radius: 12px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    overflow: hidden;
+    overflow: visible;
     transition: transform 0.2s, box-shadow 0.2s;
 }
 
@@ -260,7 +291,7 @@ h1, h2, h3, h4 {
     border-radius: 10px;
     margin-bottom: 15px;
     border: 2px solid #e9ecef;
-    overflow: hidden;
+    overflow: visible;
 }
 
 .checklist-header {
@@ -390,6 +421,8 @@ h1, h2, h3, h4 {
     padding: 4px 10px;
     border-radius: 12px;
     font-size: 0.8em;
+    font-weight: 600;
+    border: 1px solid #bbdefb;
 }
 
 .deadline-badge {
@@ -464,6 +497,37 @@ h1, h2, h3, h4 {
     padding: 15px;
     border-top: 1px solid #e0e0e0;
     background: #fafafa;
+}
+
+.item-details-info {
+    background: white;
+    border-radius: 6px;
+    padding: 12px;
+    margin-bottom: 15px;
+}
+
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 0;
+}
+
+.detail-row:not(:last-child) {
+    border-bottom: 1px solid #f0f0f0;
+    margin-bottom: 8px;
+    padding-bottom: 8px;
+}
+
+.detail-row label {
+    font-weight: 500;
+    color: #555;
+    font-size: 0.9em;
+}
+
+.detail-value {
+    color: #333;
+    font-size: 0.9em;
 }
 
 .progress-control {
@@ -550,6 +614,27 @@ h1, h2, h3, h4 {
     border-radius: 12px;
     font-size: 0.75em;
     font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.step-status:hover {
+    opacity: 0.8;
+    transform: scale(1.05);
+}
+
+.step-status-container {
+    position: relative;
+}
+
+.step-status-container select {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.75em;
+    font-weight: 600;
+    border: 1px solid #ddd;
+    background: white;
+    cursor: pointer;
 }
 
 .step-status.completed {
@@ -565,6 +650,11 @@ h1, h2, h3, h4 {
 .step-status.pending {
     background: #e0e0e0;
     color: #666;
+}
+
+.step-status.urgent {
+    background: #f44336;
+    color: white;
 }
 
 .empty-message {
@@ -622,27 +712,76 @@ h1, h2, h3, h4 {
 }
 /* Modal Styles */
 .modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
     background-color: rgba(0, 0, 0, 0.5);
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 1000;
+    z-index: 999999 !important;
+    pointer-events: auto !important;
 }
 
 .modal-content {
     background: white;
     border-radius: 12px;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3); 
     width: 90%;
     max-width: 500px;
     max-height: 90vh;
     overflow-y: auto;
     animation: slideIn 0.3s ease-out;
+    position: relative !important;
+    z-index: 1000000 !important;
+}
+
+/* Ensure modals break out of any stacking context */
+.modal-overlay * {
+    z-index: inherit !important;
+}
+
+/* Reset any transform or contain properties that might create stacking contexts */
+.space-box,
+.checklist-card,
+.item-card {
+    contain: none !important;
+    isolation: auto !important;
+}
+
+.space-box:hover {
+    transform: translateY(-2px) !important;
+}
+
+.checklist-card:hover {
+    transform: translateY(-2px) !important;
+}
+
+.item-card:hover {
+    transform: translateY(-2px) !important;
+}
+
+/* Force modals to render at document level */
+.modal-overlay {
+    isolation: isolate !important;
+}
+
+/* Prevent any parent containers from creating stacking contexts that could interfere with modals */
+.dashboard,
+.spaces-section,
+.spaces-grid,
+.space-content,
+.checklist-items,
+.item-details {
+    isolation: auto !important;
+    filter: none !important;
+    perspective: none !important;
+    clip-path: none !important;
+    mask: none !important;
+    mix-blend-mode: normal !important;
+    contain: none !important;
 }
 
 @keyframes slideIn {
@@ -789,6 +928,82 @@ h1, h2, h3, h4 {
 .modal-actions button:disabled {
     opacity: 0.6;
     cursor: not-allowed;
+}
+
+/* Step Input Styles */
+.step-input-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.step-input-row input {
+    flex: 1;
+}
+
+.remove-step-btn {
+    background: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: bold;
+}
+
+.remove-step-btn:hover {
+    background: #c82333;
+}
+
+.add-step-btn {
+    background: #28a745;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    margin-top: 8px;
+}
+
+.add-step-btn:hover {
+    background: #218838;
+}
+
+/* Category Input Styles */
+.category-input-group {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.category-input-group select {
+    flex: 1;
+}
+
+.add-category-btn {
+    background: #667eea;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.add-category-btn:hover {
+    background: #5568d3;
 }
 
 /* Delete and Add Buttons */
@@ -987,6 +1202,57 @@ h1, h2, h3, h4 {
     margin: 0;
     font-size: 24px;
     color: #333;
+}
+
+.admin-tabs {
+    display: flex;
+    gap: 10px;
+}
+
+.tab-btn {
+    background: #e0e0e0;
+    color: #333;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.3s;
+}
+
+.tab-btn:hover {
+    background: #d0d0d0;
+}
+
+.tab-btn.active {
+    background: #667eea;
+    color: white;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.section-header h3 {
+    margin: 0;
+    font-size: 20px;
+    color: #333;
+}
+
+.category-manager {
+    margin-top: 20px;
+}
+
+.categories-table-container {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
 .agents-table-container {

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import SpaceBox from './SpaceBox';
 import AddSpaceModal from './AddSpaceModal';
+import AddChecklistModal from './AddChecklistModal';
 import StatsDashboard from './StatsDashboard';
 
 const API_BASE = 'http://localhost:5000/api';
@@ -13,8 +14,11 @@ function Dashboard({ onAdminAccess }) {
   const [showLogin, setShowLogin] = useState(true);
   const [loggedInAgent, setLoggedInAgent] = useState(null);
   const [showAddSpaceModal, setShowAddSpaceModal] = useState(false);
+  const [showAddChecklistModal, setShowAddChecklistModal] = useState(false);
+  const [selectedSpaceName, setSelectedSpaceName] = useState('');
   const [showAdminPrompt, setShowAdminPrompt] = useState(false);
   const [adminPassword, setAdminPassword] = useState('');
+  const [isSignupMode, setIsSignupMode] = useState(false);
 
   const fetchSpaces = async (agentNameParam = null) => {
     setLoading(true);
@@ -70,17 +74,64 @@ function Dashboard({ onAdminAccess }) {
     }
   };
 
+  const handleSignup = async (e) => {
+    e.preventDefault();
+    const name = e.target.name.value.trim();
+    const email = e.target.email.value.trim();
+    const password = e.target.password.value;
+    const confirmPassword = e.target.confirmPassword.value;
+
+    // Validation
+    if (!name || !email || !password) {
+      setError('All fields are required');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters long');
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_BASE}/agents/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password })
+      });
+      const result = await response.json();
+      
+      if (result.success) {
+        // Ensure the agent data has _id field
+        const agentData = {
+          ...result.data,
+          _id: result.data.id || result.data._id
+        };
+        setLoggedInAgent(agentData);
+        setShowLogin(false);
+        setIsSignupMode(false);
+        setError(null);
+        fetchSpaces(agentData.name);
+      } else {
+        setError(result.message || 'Signup failed');
+      }
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+
   const handleLogout = () => {
     setLoggedInAgent(null);
     setShowLogin(true);
     setSpaces([]);
     setAgentName('');
-  };
-
-  const handleLoadByAgent = () => {
-    if (agentName.trim()) {
-      fetchSpaces(agentName.trim());
-    }
+    setIsSignupMode(false);
+    setError(null);
   };
 
   const handleSpaceAdded = (newSpace) => {
@@ -90,6 +141,17 @@ function Dashboard({ onAdminAccess }) {
 
   const handleSpaceDeleted = (spaceId) => {
     setSpaces(spaces.filter(s => s._id !== spaceId));
+  };
+
+  const handleAddChecklistClick = (spaceName) => {
+    setSelectedSpaceName(spaceName);
+    setShowAddChecklistModal(true);
+  };
+
+  const handleChecklistAdded = (newChecklist) => {
+    // Refresh the spaces to update the checklist count
+    fetchSpaces(loggedInAgent?.name);
+    setShowAddChecklistModal(false);
   };
 
   const handleAdminClick = () => {
@@ -115,7 +177,6 @@ function Dashboard({ onAdminAccess }) {
   };
 
   useEffect(() => {
-    // Try to load all spaces on mount
     fetchSpaces();
   }, []);
 
@@ -123,23 +184,55 @@ function Dashboard({ onAdminAccess }) {
     return (
       <div className="login-container">
         <div className="login-box">
-          <h1>📋 Todo List Dashboard</h1>
-          <form onSubmit={handleLogin}>
-            <input type="email" name="email" placeholder="Email" required />
-            <input type="password" name="password" placeholder="Password" required />
-            <button type="submit">Login</button>
-          </form>
+          <h1>📋 Todo List</h1>
+          
+          {!isSignupMode ? (
+            // Login Form
+            <>
+              <form onSubmit={handleLogin}>
+                <input type="email" name="email" placeholder="Email" required />
+                <input type="password" name="password" placeholder="Password" required />
+                <button type="submit">Login</button>
+              </form>
+              <div className="auth-switch">
+                <span>Don't have an account? </span>
+                <button 
+                  type="button" 
+                  onClick={() => {
+                    setIsSignupMode(true);
+                    setError(null);
+                  }}
+                >
+                  Sign Up
+                </button>
+              </div>
+            </>
+          ) : (
+            // Signup Form
+            <>
+              <form onSubmit={handleSignup}>
+                <input type="text" name="name" placeholder="Full Name" required />
+                <input type="email" name="email" placeholder="Email" required />
+                <input type="password" name="password" placeholder="Password" required />
+                <input type="password" name="confirmPassword" placeholder="Confirm Password" required />
+                <button type="submit">Sign Up</button>
+              </form>
+              <div className="auth-switch">
+                <span>Already have an account? </span>
+                <button 
+                  type="button" 
+                  onClick={() => {
+                    setIsSignupMode(false);
+                    setError(null);
+                  }}
+                >
+                  Login
+                </button>
+              </div>
+            </>
+          )}
+          
           {error && <div className="error">{error}</div>}
-          <div className="or-divider">OR</div>
-          <div className="load-all-section">
-            <input
-              type="text"
-              placeholder="Enter agent name (optional)"
-              value={agentName}
-              onChange={(e) => setAgentName(e.target.value)}
-            />
-            <button onClick={handleLoadByAgent}>Load All Spaces</button>
-          </div>
         </div>
       </div>
     );
@@ -157,7 +250,7 @@ function Dashboard({ onAdminAccess }) {
             </div>
           )}
           <button className="admin-btn" onClick={handleAdminClick} title="Admin Panel">
-            ⚙️ Admin
+            Admin
           </button>
           <button className="refresh-btn" onClick={() => fetchSpaces(loggedInAgent?.name || agentName)}>
             🔄 Refresh
@@ -199,6 +292,8 @@ function Dashboard({ onAdminAccess }) {
                 key={space._id} 
                 space={space}
                 onSpaceDeleted={handleSpaceDeleted}
+                onAddChecklistClick={handleAddChecklistClick}
+                onChecklistUpdate={() => fetchSpaces(loggedInAgent?.name)}
               />
             ))}
           </div>
@@ -210,6 +305,13 @@ function Dashboard({ onAdminAccess }) {
         onClose={() => setShowAddSpaceModal(false)}
         onSpaceAdded={handleSpaceAdded}
         agentId={loggedInAgent?._id}
+      />
+
+      <AddChecklistModal
+        isOpen={showAddChecklistModal}
+        onClose={() => setShowAddChecklistModal(false)}
+        onChecklistAdded={handleChecklistAdded}
+        spaceName={selectedSpaceName}
       />
 
       {/* Admin Password Modal */}

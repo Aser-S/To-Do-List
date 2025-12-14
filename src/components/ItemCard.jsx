@@ -9,6 +9,7 @@ function ItemCard({ item, onProgressChange, onStepStatusChange, onItemDeleted })
   const [steps, setSteps] = useState(item.steps || []);
   const [showAddStepModal, setShowAddStepModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [categoryName, setCategoryName] = useState('');
 
   useEffect(() => {
     // Fetch steps for this item if not already loaded
@@ -22,7 +23,24 @@ function ItemCard({ item, onProgressChange, onStepStatusChange, onItemDeleted })
         })
         .catch(err => console.error('Error fetching steps:', err));
     }
-  }, [expanded, item.name]);
+  }, [expanded, item.name, steps]);
+
+  useEffect(() => {
+    // Fetch category name if category_id exists but category_name is not populated
+    if (item.category_id && typeof item.category_id === 'string' && !categoryName) {
+      fetch(`${API_BASE}/categories/${item.category_id}`)
+        .then(r => r.json())
+        .then(result => {
+          if (result.success && result.data) {
+            setCategoryName(result.data.category_name);
+          }
+        })
+        .catch(err => {
+          console.error('Error fetching category:', err);
+          setCategoryName('Unknown Category');
+        });
+    }
+  }, [item.category_id, categoryName]);
 
   const handleStepStatusChange = async (stepId, newStatus) => {
     try {
@@ -88,8 +106,12 @@ function ItemCard({ item, onProgressChange, onStepStatusChange, onItemDeleted })
                 {item.priority}
               </span>
             )}
-            {item.category_id && typeof item.category_id === 'object' && (
-              <span className="category-badge">{item.category_id.category_name}</span>
+            {item.category_id && (
+              <span className="category-badge">
+                {typeof item.category_id === 'object' 
+                  ? item.category_id.category_name 
+                  : categoryName || 'Loading...'}
+              </span>
             )}
             {item.deadline && (
               <span className="deadline-badge">
@@ -125,6 +147,27 @@ function ItemCard({ item, onProgressChange, onStepStatusChange, onItemDeleted })
       
       {expanded && (
         <div className="item-details">
+          <div className="item-details-info">
+            <div className="detail-row">
+              <label>Category:</label>
+              <span className="detail-value">
+                {item.category_id 
+                  ? (typeof item.category_id === 'object' 
+                      ? item.category_id.category_name 
+                      : categoryName || 'Loading...')
+                  : 'No Category'}
+              </span>
+            </div>
+            {item.deadline && (
+              <div className="detail-row">
+                <label>Deadline:</label>
+                <span className="detail-value">
+                  {new Date(item.deadline).toLocaleDateString()}
+                </span>
+              </div>
+            )}
+          </div>
+
           <div className="progress-control">
             <label>Progress: </label>
             <input
@@ -140,28 +183,30 @@ function ItemCard({ item, onProgressChange, onStepStatusChange, onItemDeleted })
             <span>{progress}%</span>
           </div>
           
-          {hasSteps && (
-            <div className="steps-container">
-              <div className="steps-header">
-                <h5>Steps:</h5>
-                <button 
-                  className="add-btn" 
-                  onClick={() => setShowAddStepModal(true)}
-                  title="Add step"
-                >
-                  + Add Step
-                </button>
-              </div>
-              {steps.map(step => (
+          <div className="steps-container">
+            <div className="steps-header">
+              <h5>Steps:</h5>
+              <button 
+                className="add-btn" 
+                onClick={() => setShowAddStepModal(true)}
+                title="Add step"
+              >
+                + Add Step
+              </button>
+            </div>
+            {hasSteps ? (
+              steps.map(step => (
                 <StepItem
                   key={step._id}
                   step={step}
                   onStatusChange={handleStepStatusChange}
                   onStepDeleted={handleStepDeleted}
                 />
-              ))}
-            </div>
-          )}
+              ))
+            ) : (
+              <p className="empty-message">No steps yet. Add one to get started!</p>
+            )}
+          </div>
 
           <AddStepModal
             isOpen={showAddStepModal}

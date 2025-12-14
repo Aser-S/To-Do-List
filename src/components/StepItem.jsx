@@ -5,6 +5,7 @@ const API_BASE = 'http://localhost:5000/api';
 function StepItem({ step, onStatusChange, onStepDeleted }) {
   const isCompleted = step.status === 'Completed';
   const [deleting, setDeleting] = useState(false);
+  const [showStatusDropdown, setShowStatusDropdown] = useState(false);
 
   const handleDelete = async () => {
     if (window.confirm(`Delete step "${step.step_name}"?`)) {
@@ -44,9 +45,32 @@ function StepItem({ step, onStatusChange, onStepDeleted }) {
         </span>
       </label>
       <div className="step-actions">
-        <span className={`step-status ${step.status.toLowerCase().replace(' ', '-')}`}>
-          {step.status}
-        </span>
+        <div className="step-status-container">
+          {showStatusDropdown ? (
+            <select 
+              value={step.status} 
+              onChange={(e) => {
+                onStatusChange(step._id, e.target.value);
+                setShowStatusDropdown(false);
+              }}
+              onBlur={() => setShowStatusDropdown(false)}
+              autoFocus
+            >
+              <option value="Pending">Pending</option>
+              <option value="In Progress">In Progress</option>
+              <option value="Completed">Completed</option>
+              <option value="Urgent">Urgent</option>
+            </select>
+          ) : (
+            <span 
+              className={`step-status ${step.status.toLowerCase().replace(' ', '-')}`}
+              onClick={() => setShowStatusDropdown(true)}
+              title="Click to change status"
+            >
+              {step.status}
+            </span>
+          )}
+        </div>
         <button 
           className="delete-btn" 
           onClick={handleDelete} 

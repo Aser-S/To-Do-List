@@ -1,4 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
+import AddCategoryModal from './AddCategoryModal';
 
 const API_BASE = 'http://localhost:5000/api';
 
@@ -8,8 +10,12 @@ function AddItemModal({ isOpen, onClose, onItemAdded, checklistName }) {
     description: '',
     priority: 'Medium',
     deadline: '',
-    status: 'Pending'
+    status: 'Pending',
+    category_id: ''
   });
+  const [steps, setSteps] = useState(['']);
+  const [categories, setCategories] = useState([]);
+  const [showAddCategoryModal, setShowAddCategoryModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -19,6 +25,46 @@ function AddItemModal({ isOpen, onClose, onItemAdded, checklistName }) {
       ...prev,
       [name]: value
     }));
+  };
+
+  const handleStepChange = (index, value) => {
+    const newSteps = [...steps];
+    newSteps[index] = value;
+    setSteps(newSteps);
+  };
+
+  const addStep = () => {
+    setSteps([...steps, '']);
+  };
+
+  const removeStep = (index) => {
+    if (steps.length > 1) {
+      setSteps(steps.filter((_, i) => i !== index));
+    }
+  };
+
+  // Fetch categories when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      fetchCategories();
+    }
+  }, [isOpen]);
+
+  const fetchCategories = async () => {
+    try {
+      const response = await fetch(`${API_BASE}/categories`);
+      const result = await response.json();
+      if (result.success) {
+        setCategories(result.data || []);
+      }
+    } catch (err) {
+      console.error('Error fetching categories:', err);
+    }
+  };
+
+  const handleCategoryAdded = (newCategory) => {
+    setCategories([...categories, newCategory]);
+    setFormData(prev => ({ ...prev, category_id: newCategory._id }));
   };
 
   const handleSubmit = async (e) => {
@@ -56,19 +102,40 @@ function AddItemModal({ isOpen, onClose, onItemAdded, checklistName }) {
           ...formData,
           checklist_id: checklistResult.data._id,
           progress: 0,
-          category_id: null
+          category_id: formData.category_id || null
         })
       });
 
       const result = await response.json();
       if (result.success) {
+        // Create steps if any were provided
+        const validSteps = steps.filter(step => step.trim() !== '');
+        if (validSteps.length > 0) {
+          for (const stepName of validSteps) {
+            try {
+              await fetch(`${API_BASE}/steps`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  step_name: stepName.trim(),
+                  item_id: result.data._id
+                })
+              });
+            } catch (stepError) {
+              console.error('Error creating step:', stepError);
+            }
+          }
+        }
+
         setFormData({
           name: '',
           description: '',
           priority: 'Medium',
           deadline: '',
-          status: 'Pending'
+          status: 'Pending',
+          category_id: ''
         });
+        setSteps(['']);
         onItemAdded && onItemAdded(result.data);
         onClose();
       } else {
@@ -83,7 +150,7 @@ function AddItemModal({ isOpen, onClose, onItemAdded, checklistName }) {
 
   if (!isOpen) return null;
 
-  return (
+  return createPortal(
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
@@ -125,14 +192,67 @@ function AddItemModal({ isOpen, onClose, onItemAdded, checklistName }) {
             </div>
 
             <div className="form-group">
-              <label>Deadline</label>
-              <input
-                type="date"
-                name="deadline"
-                value={formData.deadline}
-                onChange={handleChange}
-              />
+              <label>Category</label>
+              <div className="category-input-group">
+                <select name="category_id" value={formData.category_id} onChange={handleChange}>
+                  <option value="">No Category</option>
+                  {categories.map(category => (
+                    <option key={category._id} value={category._id}>
+                      {category.category_name}
+                    </option>
+                  ))}
+                </select>
+                <button 
+                  type="button" 
+                  onClick={() => setShowAddCategoryModal(true)}
+                  className="add-category-btn"
+                  title="Create new category"
+                >
+                  +
+                </button>
+              </div>
             </div>
+          </div>
+
+          <div className="form-group">
+            <label>Deadline</label>
+            <input
+              type="date"
+              name="deadline"
+              value={formData.deadline}
+              onChange={handleChange}
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Initial Steps (Optional)</label>
+            {steps.map((step, index) => (
+              <div key={index} className="step-input-row">
+                <input
+                  type="text"
+                  value={step}
+                  onChange={(e) => handleStepChange(index, e.target.value)}
+                  placeholder={`Step ${index + 1}`}
+                />
+                {steps.length > 1 && (
+                  <button 
+                    type="button" 
+                    onClick={() => removeStep(index)}
+                    className="remove-step-btn"
+                    title="Remove step"
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+            ))}
+            <button 
+              type="button" 
+              onClick={addStep}
+              className="add-step-btn"
+            >
+              + Add Step
+            </button>
           </div>
 
           <div className="form-info">Checklist: <strong>{checklistName}</strong></div>
@@ -145,7 +265,14 @@ function AddItemModal({ isOpen, onClose, onItemAdded, checklistName }) {
           </div>
         </form>
       </div>
-    </div>
+      
+      <AddCategoryModal
+        isOpen={showAddCategoryModal}
+        onClose={() => setShowAddCategoryModal(false)}
+        onCategoryAdded={handleCategoryAdded}
+      />
+    </div>,
+    document.body
   );
 }
 
