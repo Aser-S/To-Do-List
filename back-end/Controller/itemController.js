@@ -253,44 +253,62 @@ exports.updateItemByName = async (req, res) => {
     }
 };
 
-// Delete item by name 
 exports.deleteItemByName = async (req, res) => {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    
     try {
         const { name } = req.params;
         
+        // Find the item
         const item = await Item.findOne({ 
             name: { $regex: new RegExp(name, 'i') } 
-        });
+        }).session(session);
 
         if (!item) {
+            await session.abortTransaction();
+            session.endSession();
             return res.status(404).json({
                 success: false,
                 message: 'Item not found'
             });
         }
 
-        // Remove item from checklist's items array
+        // Delete all steps for this item
+        await Step.deleteMany({ item_id: item._id }).session(session);
+
+        // Remove from checklist
         await Checklist.findByIdAndUpdate(
             item.checklist_id,
-            { $pull: { items: item._id } }
+            { $pull: { items: item._id } },
+            { session }
         );
 
-        // Remove item from category's items array (if exists)
+        // Remove from category if exists
         if (item.category_id) {
             await Category.findByIdAndUpdate(
                 item.category_id,
-                { $pull: { items: item._id } }
+                { $pull: { items: item._id } },
+                { session }
             );
         }
 
-        // Delete the item (this will trigger cascade delete of steps)
-        await item.deleteOne();
+        // Delete the item
+        await Item.findByIdAndDelete(item._id).session(session);
+
+        // Commit the transaction
+        await session.commitTransaction();
+        session.endSession();
 
         res.status(200).json({
             success: true,
             message: 'Item and all steps deleted successfully'
         });
     } catch (error) {
+        // Rollback on error
+        await session.abortTransaction();
+        session.endSession();
+        
         res.status(500).json({
             success: false,
             message: 'Error deleting item',
@@ -298,7 +316,6 @@ exports.deleteItemByName = async (req, res) => {
         });
     }
 };
-
 // Update item progress
 exports.updateItemProgress = async (req, res) => {
     try {

@@ -11,7 +11,7 @@ const checklistRoutes = require('./Routes/checklistRoutes');
 const itemRoutes = require('./Routes/itemRoutes');
 const stepRoutes = require('./Routes/stepRoutes');
 const categoryRoutes = require('./Routes/categoryRoutes');
-
+const aggregationRoutes = require('./routes/aggregationRoutes');
 // Import database connection
 const connectDB = require('./config/db');
 
@@ -35,7 +35,7 @@ app.use('/api/checklists', checklistRoutes);
 app.use('/api/items', itemRoutes);
 app.use('/api/steps', stepRoutes);
 app.use('/api/categories', categoryRoutes);
-
+app.use('/api/aggregation', aggregationRoutes);
 // Health check endpoint
 app.get('/health', (req, res) => {
     const dbStatus = mongoose.connection.readyState;

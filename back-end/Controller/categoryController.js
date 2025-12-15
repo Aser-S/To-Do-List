@@ -139,11 +139,12 @@ exports.updateCategoryByName = async (req, res) => {
     }
 };
 
-// Delete category by name (new)
+// Delete category by name - UPDATED FOR CASCADE DELETE
 exports.deleteCategoryByName = async (req, res) => {
     try {
         const { name } = req.params;
         
+        // Find category first to check if exists
         const category = await Category.findOne({ 
             category_name: { $regex: new RegExp(`^${name}$`, 'i') }
         });
@@ -155,18 +156,16 @@ exports.deleteCategoryByName = async (req, res) => {
             });
         }
 
-        // Remove category reference from all items
-        await Item.updateMany(
-            { category_id: category._id },
-            { $set: { category_id: null } }
-        );
-
-        // Delete the category
-        await category.deleteOne();
+        // Use findOneAndDelete to trigger the middleware cascade delete
+        // This will automatically trigger the CategorySchema.pre('remove') middleware
+        // which will remove category reference from all items
+        await Category.findOneAndDelete({ 
+            category_name: { $regex: new RegExp(`^${name}$`, 'i') }
+        });
 
         res.status(200).json({
             success: true,
-            message: 'Category deleted successfully'
+            message: 'Category deleted successfully. All items now have null category.'
         });
     } catch (error) {
         res.status(500).json({

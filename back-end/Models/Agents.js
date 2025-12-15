@@ -37,5 +37,61 @@ AgentSchema.methods.toJSON = function() {
     delete agent.password;
     return agent;
 };
+// Agent.js - FIXED VERSION
+AgentSchema.pre('remove', async function(next) {
+    try {
+        const Space = mongoose.model('Space');
+        
+        // Find all spaces for this agent
+        const spaces = await Space.find({ agent_id: this._id });
+        
+        // Delete each space individually to trigger its middleware
+        for (const space of spaces) {
+            await Space.findOneAndDelete({ _id: space._id }); // ✅
+        }
+        next();
+    } catch (error) {
+        next(error);
+    }
+});
 
+// Agent.js - Add logging to see what's happening
+AgentSchema.pre('findOneAndDelete', async function(next) {
+    try {
+        console.log('=== AGENT DELETE MIDDLEWARE TRIGGERED ===');
+        
+        const doc = await this.model.findOne(this.getFilter());
+        if (!doc) {
+            console.log('No agent document found');
+            return next();
+        }
+        
+        console.log(`Found agent: ${doc.name} (${doc._id})`);
+        console.log(`Agent has ${doc.spaces?.length || 0} spaces`);
+        
+        if (doc.spaces && doc.spaces.length > 0) {
+            const Space = mongoose.model('Space');
+            
+            // Get all spaces to delete
+            const spaces = await Space.find({ agent_id: doc._id });
+            console.log(`Found ${spaces.length} spaces to delete`);
+            
+            // Delete each space individually to trigger its middleware
+            for (const space of spaces) {
+                console.log(`Deleting space: ${space._id} (${space.space_title})`);
+                await Space.findOneAndDelete({ _id: space._id });
+            }
+        } else {
+            console.log('No spaces found for this agent');
+        }
+        
+        console.log('=== AGENT DELETE MIDDLEWARE COMPLETED ===');
+        next();
+    } catch (error) {
+        console.error('=== ERROR IN AGENT DELETE MIDDLEWARE ===');
+        console.error('Error:', error.message);
+        console.error('Stack:', error.stack);
+        next(error);
+    }
+});
 module.exports = mongoose.model('Agent', AgentSchema);

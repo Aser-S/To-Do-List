@@ -1,3 +1,4 @@
+const mongoose = require('mongoose'); 
 const Space = require('../Models/Space');
 const Agent = require('../Models/Agents');
 const Checklist = require('../Models/Checklist');
@@ -168,36 +169,56 @@ exports.updateSpaceByTitle = async (req, res) => {
         });
     }
 };
-// Delete space by title 
+// Delete space by title - WITH DEBUG LOGGING
 exports.deleteSpaceByTitle = async (req, res) => {
     try {
         const { title } = req.params;
+        console.log(`=== ATTEMPTING TO DELETE SPACE: "${title}" ===`);
         
+        // Find space first to check if exists
         const space = await Space.findOne({ 
             space_title: { $regex: new RegExp(title, 'i') } 
         });
 
         if (!space) {
+            console.log('Space not found');
             return res.status(404).json({
                 success: false,
                 message: 'Space not found'
             });
         }
 
+        console.log(`Found space: ${space._id}`);
+        console.log(`Agent ID: ${space.agent_id}`);
+        console.log(`Checklists count: ${space.checklist ? space.checklist.length : 0}`);
+
         // Remove space from agent's spaces array
+        console.log('Removing space from agent...');
         await Agent.findByIdAndUpdate(
             space.agent_id,
             { $pull: { spaces: space._id } }
         );
+        console.log('Removed from agent successfully');
 
-        // Delete the space (this will trigger cascade delete)
-        await space.deleteOne();
+        // Use findOneAndDelete to trigger the middleware cascade delete
+        console.log('Deleting space (triggering cascade)...');
+        await Space.findOneAndDelete({ 
+            space_title: { $regex: new RegExp(title, 'i') } 
+        });
 
+        console.log('=== SPACE DELETION COMPLETED SUCCESSFULLY ===');
+        
         res.status(200).json({
             success: true,
-            message: 'Space and all associated checklists deleted successfully'
+            message: 'Space and all associated checklists, items, and steps deleted successfully'
         });
     } catch (error) {
+        console.error('=== ERROR DELETING SPACE ===');
+        console.error('Error message:', error.message);
+        console.error('Error stack:', error.stack);
+        console.error('Full error:', error);
+        console.log('=== END ERROR ===');
+        
         res.status(500).json({
             success: false,
             message: 'Error deleting space',

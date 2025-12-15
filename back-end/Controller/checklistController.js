@@ -176,11 +176,12 @@ exports.updateChecklistByTitle = async (req, res) => {
     }
 };
 
-// Delete checklist by title 
+// Delete checklist by title - UPDATED FOR CASCADE DELETE
 exports.deleteChecklistByTitle = async (req, res) => {
     try {
         const { title } = req.params;
         
+        // Find checklist first to check if exists
         const checklist = await Checklist.findOne({ 
             checklist_title: { $regex: new RegExp(title, 'i') } 
         });
@@ -198,12 +199,16 @@ exports.deleteChecklistByTitle = async (req, res) => {
             { $pull: { checklist: checklist._id } }
         );
 
-        // Delete the checklist (this will trigger cascade delete)
-        await checklist.deleteOne();
+        // Use findOneAndDelete to trigger the middleware cascade delete
+        // This will automatically trigger the ChecklistSchema.pre('remove') middleware
+        // which will delete all items (which in turn delete all steps)
+        await Checklist.findOneAndDelete({ 
+            checklist_title: { $regex: new RegExp(title, 'i') } 
+        });
 
         res.status(200).json({
             success: true,
-            message: 'Checklist and all items deleted successfully'
+            message: 'Checklist and all items (including steps) deleted successfully'
         });
     } catch (error) {
         res.status(500).json({

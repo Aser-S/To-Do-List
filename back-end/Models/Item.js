@@ -88,5 +88,26 @@ ItemSchema.pre('remove', async function(next) {
         next(error);
     }
 });
+// Add middleware for findOneAndDelete as well - WITH DEBUG LOGGING
+ItemSchema.pre('findOneAndDelete', async function(next) {
+    try {
+        console.log('findOneAndDelete middleware triggered for Item');
+        const doc = await this.model.findOne(this.getFilter());
+        if (doc) {
+            console.log(`Deleting steps for item: ${doc._id}`);
+            console.log(`Steps to delete: ${doc.steps}`);
+            // Delete all steps associated with this item
+            const result = await mongoose.model('Step').deleteMany({ _id: { $in: doc.steps } });
+            console.log(`Deleted ${result.deletedCount} steps`);
+        }
+        next();
+    } catch (error) {
+        console.error('Error in findOneAndDelete middleware:', error);
+        next(error);
+    }
+});
+ItemSchema.index({ deadline: 1 }); // #1 Priority - For deadline sorting/filtering
+
+StepSchema.index({ item_id: 1, status: 1 }); // For item progress calculation
 
 module.exports = mongoose.model('Item', ItemSchema);
