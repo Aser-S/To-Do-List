@@ -1542,6 +1542,42 @@ h1, h2, h3, h4 {
     padding: 40px 20px;
 }
 
+.space-section {
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.space-section:last-child {
+    border-bottom: none;
+}
+
+.space-section h4 {
+    margin: 0 0 10px 0;
+    color: #667eea;
+    font-size: 16px;
+}
+
+.checklist-results {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 2px solid #667eea;
+}
+
+.checklist-results h4 {
+    margin: 0 0 15px 0;
+    color: #333;
+}
+
+.report-table th {
+    background-color: #f8f9fa;
+    padding: 12px 15px;
+    text-align: left;
+    font-weight: 600;
+    color: #555;
+    border-bottom: 2px solid #e0e0e0;
+}
+
 @media (max-width: 768px) {
     .aggregations-section {
         grid-template-columns: 1fr;
