@@ -9,7 +9,7 @@ function ItemCard({ item, onProgressChange, onStepStatusChange, onItemDeleted, o
   const [steps, setSteps] = useState(item.steps || []);
   const [showAddStepModal, setShowAddStepModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [categoryName, setCategoryName] = useState('');
+  const [categoryName, setCategoryName] = useState(null);
 
   useEffect(() => {
     // Fetch steps for this item if not already loaded
@@ -27,16 +27,24 @@ function ItemCard({ item, onProgressChange, onStepStatusChange, onItemDeleted, o
 
   useEffect(() => {
     // Fetch category name if category_id exists but category_name is not populated
-    if (item.category_id && typeof item.category_id === 'string' && !categoryName) {
-      fetch(`${API_BASE}/categories/${item.category_id}`)
+    if (item.category_id && typeof item.category_id === 'string' && categoryName === null) {
+      // Fetch all categories and find the matching one
+      fetch(`${API_BASE}/categories`)
         .then(r => r.json())
         .then(result => {
           if (result.success && result.data) {
-            setCategoryName(result.data.category_name);
+            const category = result.data.find(cat => cat._id === item.category_id);
+            if (category) {
+              setCategoryName(category.category_name);
+            } else {
+              setCategoryName('Unknown Category');
+            }
+          } else {
+            setCategoryName('Unknown Category');
           }
         })
         .catch(err => {
-          console.error('Error fetching category:', err);
+          console.error('Error fetching categories:', err);
           setCategoryName('Unknown Category');
         });
     }
@@ -113,7 +121,7 @@ function ItemCard({ item, onProgressChange, onStepStatusChange, onItemDeleted, o
               <span className="category-badge">
                 {typeof item.category_id === 'object' 
                   ? item.category_id.category_name 
-                  : categoryName || 'Loading...'}
+                  : categoryName || 'Category'}
               </span>
             )}
             {item.deadline && (
@@ -157,7 +165,7 @@ function ItemCard({ item, onProgressChange, onStepStatusChange, onItemDeleted, o
                 {item.category_id 
                   ? (typeof item.category_id === 'object' 
                       ? item.category_id.category_name 
-                      : categoryName || 'Loading...')
+                      : categoryName || 'Category')
                   : 'No Category'}
               </span>
             </div>
