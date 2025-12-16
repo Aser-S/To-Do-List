@@ -1,10 +1,13 @@
 import { useState } from 'react';
 import Dashboard from './components/Dashboard';
 import AdminPanel from './components/AdminPanel';
+import AggregationsPage from './components/Aggregation';
 import './App.css';
 
 function App() {
-  const [currentView, setCurrentView] = useState('dashboard'); // 'dashboard' or 'admin'
+  const [currentView, setCurrentView] = useState('dashboard'); // 'dashboard', 'admin', or 'aggregation'
+  const [loggedInAgent, setLoggedInAgent] = useState(null);
+  const [spaces, setSpaces] = useState([]);
 
   const handleAdminAccess = (password) => {
     // Simple admin password check
@@ -13,6 +16,12 @@ function App() {
       return true;
     }
     return false;
+  };
+
+  const handleAggregationAccess = (agent, spacesData) => {
+    setLoggedInAgent(agent);
+    setSpaces(spacesData);
+    setCurrentView('aggregation');
   };
 
   return (
@@ -26,8 +35,20 @@ function App() {
           </div>
           <AdminPanel />
         </>
+      ) : currentView === 'aggregation' ? (
+        <>
+          <div className="view-toggle">
+            <button className="toggle-btn" onClick={() => setCurrentView('dashboard')}>
+              ← Back to Dashboard
+            </button>
+          </div>
+          <AggregationsPage loggedInAgent={loggedInAgent} spaces={spaces} />
+        </>
       ) : (
-        <Dashboard onAdminAccess={handleAdminAccess} />
+        <Dashboard 
+          onAdminAccess={handleAdminAccess} 
+          onAggregationAccess={handleAggregationAccess}
+        />
       )}
     </div>
   );

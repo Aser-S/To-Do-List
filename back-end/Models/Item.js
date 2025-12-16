@@ -108,6 +108,6 @@ ItemSchema.pre('findOneAndDelete', async function(next) {
 });
 ItemSchema.index({ deadline: 1 }); // #1 Priority - For deadline sorting/filtering
 
-StepSchema.index({ item_id: 1, status: 1 }); // For item progress calculation
+// StepSchema.index({ item_id: 1, status: 1 }); // For item progress calculation
 
 module.exports = mongoose.model('Item', ItemSchema);

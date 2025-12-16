@@ -3,7 +3,7 @@ import ChecklistCard from './ChecklistCard';
 
 const API_BASE = 'http://localhost:5000/api';
 
-function SpaceBox({ space, onSpaceDeleted, onAddChecklistClick, onChecklistUpdate }) {
+function SpaceBox({ space, onSpaceDeleted, onAddChecklistClick, onChecklistUpdate, onStatsRefresh }) {
   const [expanded, setExpanded] = useState(true);
   const [checklists, setChecklists] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -84,9 +84,10 @@ function SpaceBox({ space, onSpaceDeleted, onAddChecklistClick, onChecklistUpdat
               <ChecklistCard
                 key={checklist._id}
                 checklist={checklist}
-                onItemProgressChange={() => {}}
-                onStepStatusChange={() => {}}
+                onItemProgressChange={onStatsRefresh}
+                onStepStatusChange={onStatsRefresh}
                 onChecklistDeleted={handleChecklistDeleted}
+                onStatsRefresh={onStatsRefresh}
               />
             ))
           )}

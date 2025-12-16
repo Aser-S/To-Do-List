@@ -4,7 +4,7 @@ import AddItemModal from './AddItemModal';
 
 const API_BASE = 'http://localhost:5000/api';
 
-function ChecklistCard({ checklist, onItemProgressChange, onStepStatusChange, onChecklistDeleted }) {
+function ChecklistCard({ checklist, onItemProgressChange, onStepStatusChange, onChecklistDeleted, onStatsRefresh }) {
   const [expanded, setExpanded] = useState(true);
   const [items, setItems] = useState(checklist.items || []);
   const [showAddItemModal, setShowAddItemModal] = useState(false);
@@ -34,6 +34,7 @@ function ChecklistCard({ checklist, onItemProgressChange, onStepStatusChange, on
       const result = await response.json();
       if (result.success) {
         setItems(items.map(i => i._id === itemId ? { ...i, progress, status: result.data.status } : i));
+        onStatsRefresh && onStatsRefresh();
       }
     } catch (err) {
       console.error('Error updating progress:', err);
@@ -64,10 +65,12 @@ function ChecklistCard({ checklist, onItemProgressChange, onStepStatusChange, on
 
   const handleItemDeleted = (itemId) => {
     setItems(items.filter(i => i._id !== itemId));
+    onStatsRefresh && onStatsRefresh();
   };
 
   const handleItemAdded = (newItem) => {
     setItems([...items, newItem]);
+    onStatsRefresh && onStatsRefresh();
   };
 
   const totalItems = items.length;
@@ -106,8 +109,9 @@ function ChecklistCard({ checklist, onItemProgressChange, onStepStatusChange, on
                 key={item._id}
                 item={item}
                 onProgressChange={handleProgressChange}
-                onStepStatusChange={() => {}}
+                onStepStatusChange={onStatsRefresh}
                 onItemDeleted={handleItemDeleted}
+                onStatsRefresh={onStatsRefresh}
               />
             ))
           )}

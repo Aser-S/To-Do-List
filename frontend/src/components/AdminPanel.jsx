@@ -104,25 +104,7 @@ function AdminPanel() {
     }
   };
 
-  const handleDeleteAgent = async (agentName) => {
-    if (window.confirm(`Delete agent "${agentName}" and all their data?`)) {
-      try {
-        const response = await fetch(
-          `${API_BASE}/agents/name/${encodeURIComponent(agentName)}`,
-          { method: 'DELETE' }
-        );
-        const result = await response.json();
-        if (result.success) {
-          setAgents(agents.filter(a => a.name !== agentName));
-          setError('');
-        } else {
-          setError(result.message || 'Failed to delete agent');
-        }
-      } catch (err) {
-        setError(err.message);
-      }
-    }
-  };
+
 
   if (loading) {
     return <div className="admin-panel"><div className="loading">Loading agents...</div></div>;
@@ -185,13 +167,6 @@ function AdminPanel() {
                       title="Edit agent"
                     >
                       ✏️
-                    </button>
-                    <button 
-                      className="delete-btn"
-                      onClick={() => handleDeleteAgent(agent.name)}
-                      title="Delete agent"
-                    >
-                      🗑️
                     </button>
                   </td>
                 </tr>

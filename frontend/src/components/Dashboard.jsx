@@ -6,7 +6,7 @@ import StatsDashboard from './StatsDashboard';
 
 const API_BASE = 'http://localhost:5000/api';
 
-function Dashboard({ onAdminAccess }) {
+function Dashboard({ onAdminAccess, onAggregationAccess }) {
   const [spaces, setSpaces] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -19,6 +19,7 @@ function Dashboard({ onAdminAccess }) {
   const [showAdminPrompt, setShowAdminPrompt] = useState(false);
   const [adminPassword, setAdminPassword] = useState('');
   const [isSignupMode, setIsSignupMode] = useState(false);
+  const [statsRefreshTrigger, setStatsRefreshTrigger] = useState(0);
 
   const fetchSpaces = async (agentNameParam = null) => {
     setLoading(true);
@@ -137,10 +138,12 @@ function Dashboard({ onAdminAccess }) {
   const handleSpaceAdded = (newSpace) => {
     setSpaces([...spaces, newSpace]);
     setShowAddSpaceModal(false);
+    refreshStats();
   };
 
   const handleSpaceDeleted = (spaceId) => {
     setSpaces(spaces.filter(s => s._id !== spaceId));
+    refreshStats();
   };
 
   const handleAddChecklistClick = (spaceName) => {
@@ -152,10 +155,21 @@ function Dashboard({ onAdminAccess }) {
     // Refresh the spaces to update the checklist count
     fetchSpaces(loggedInAgent?.name);
     setShowAddChecklistModal(false);
+    refreshStats();
   };
 
   const handleAdminClick = () => {
     setShowAdminPrompt(true);
+  };
+
+  const handleAggregationClick = () => {
+    if (loggedInAgent && onAggregationAccess) {
+      onAggregationAccess(loggedInAgent, spaces);
+    }
+  };
+
+  const refreshStats = () => {
+    setStatsRefreshTrigger(prev => prev + 1);
   };
 
   const handleAdminSubmit = (e) => {
@@ -252,6 +266,11 @@ function Dashboard({ onAdminAccess }) {
           <button className="admin-btn" onClick={handleAdminClick} title="Admin Panel">
             Admin
           </button>
+          {loggedInAgent && (
+            <button className="aggregation-btn" onClick={handleAggregationClick} title="View Aggregations">
+              📊 Analytics
+            </button>
+          )}
           <button className="refresh-btn" onClick={() => fetchSpaces(loggedInAgent?.name || agentName)}>
             🔄 Refresh
           </button>
@@ -260,7 +279,7 @@ function Dashboard({ onAdminAccess }) {
 
       {error && <div className="error-banner">{error}</div>}
 
-      {loggedInAgent && <StatsDashboard agentName={loggedInAgent.name} />}
+      {loggedInAgent && <StatsDashboard agentName={loggedInAgent.name} refreshTrigger={statsRefreshTrigger} />}
 
       {loading ? (
         <div className="loading-container">
@@ -293,7 +312,11 @@ function Dashboard({ onAdminAccess }) {
                 space={space}
                 onSpaceDeleted={handleSpaceDeleted}
                 onAddChecklistClick={handleAddChecklistClick}
-                onChecklistUpdate={() => fetchSpaces(loggedInAgent?.name)}
+                onChecklistUpdate={() => {
+                  fetchSpaces(loggedInAgent?.name);
+                  refreshStats();
+                }}
+                onStatsRefresh={refreshStats}
               />
             ))}
           </div>

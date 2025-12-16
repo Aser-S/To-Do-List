@@ -4,7 +4,7 @@ import AddStepModal from './AddStepModal';
 
 const API_BASE = 'http://localhost:5000/api';
 
-function ItemCard({ item, onProgressChange, onStepStatusChange, onItemDeleted }) {
+function ItemCard({ item, onProgressChange, onStepStatusChange, onItemDeleted, onStatsRefresh }) {
   const [expanded, setExpanded] = useState(false);
   const [steps, setSteps] = useState(item.steps || []);
   const [showAddStepModal, setShowAddStepModal] = useState(false);
@@ -53,6 +53,7 @@ function ItemCard({ item, onProgressChange, onStepStatusChange, onItemDeleted })
       if (result.success) {
         setSteps(steps.map(s => s._id === stepId ? { ...s, status: newStatus } : s));
         onStepStatusChange && onStepStatusChange();
+        onStatsRefresh && onStatsRefresh();
       }
     } catch (err) {
       console.error('Error updating step:', err);
@@ -83,10 +84,12 @@ function ItemCard({ item, onProgressChange, onStepStatusChange, onItemDeleted })
 
   const handleStepDeleted = (stepId) => {
     setSteps(steps.filter(s => s._id !== stepId));
+    onStatsRefresh && onStatsRefresh();
   };
 
   const handleStepAdded = (newStep) => {
     setSteps([...steps, newStep]);
+    onStatsRefresh && onStatsRefresh();
   };
 
   const progress = item.progress || 0;

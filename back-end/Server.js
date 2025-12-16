@@ -11,7 +11,8 @@ const checklistRoutes = require('./Routes/checklistRoutes');
 const itemRoutes = require('./Routes/itemRoutes');
 const stepRoutes = require('./Routes/stepRoutes');
 const categoryRoutes = require('./Routes/categoryRoutes');
-const aggregationRoutes = require('./routes/aggregationRoutes');
+const aggregationRoutes = require('./Routes/aggrgiationRoutes');
+
 // Import database connection
 const connectDB = require('./config/db');
 

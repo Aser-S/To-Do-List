@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const aggregationController = require('../controllers/aggregationController');
+const aggregationController = require('../Controller/aggregationController');
 
 // Agent productivity report
 router.get('/agent/:agentId/productivity', aggregationController.getAgentProductivityReport);
