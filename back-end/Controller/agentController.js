@@ -240,7 +240,7 @@ exports.deleteAgentByName = async (req, res) => {
         });
     }
 };
-// Delete agent by name - MANUAL CASCADE DELETE
+// Delete agent by name - CASCADE UNTIL SPACE ONLY
 exports.deleteAgentByName = async (req, res) => {
     const session = await mongoose.startSession();
     session.startTransaction();
